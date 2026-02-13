@@ -1,11 +1,8 @@
-# core/compress.py
-# 依赖安装：pip install python-snappy lz4
+#core/compress.py
 import zlib
 import snappy
 import lz4.frame as lz4
 from .consts import COMPRESS_NONE, COMPRESS_ZLIB, COMPRESS_SNAPPY, COMPRESS_LZ4
-
-
 # -----------------------------------------------------------------------------
 # Compress/Decompress
 # -----------------------------------------------------------------------------
@@ -20,7 +17,6 @@ def compress(data: bytes, compress_type: int) -> bytes:
         return lz4.compress(data, compression_level=3)
     else:
         raise ValueError(f"compress: unsupported type {compress_type}")
-
 
 def decompress(data: bytes, compress_type: int) -> bytes:
     if compress_type == COMPRESS_NONE:
