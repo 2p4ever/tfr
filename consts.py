@@ -1,0 +1,37 @@
+#core/consts.py
+HEADER_SIZE = 20
+SALT_SIZE = 16
+
+PAYLOAD_MAX_NORMAL  = 1400
+PAYLOAD_MAX_SLOW    = 490
+
+FEC_DATA_NUM = 3
+FEC_PARITY_NUM = 1
+
+CMD_HANDSHAKE_SYN     = 0x01
+CMD_HANDSHAKE_SYN_ACK = 0x02
+CMD_HANDSHAKE_ACK     = 0x03
+CMD_HANDSHAKE_FIN     = 0x04
+CMD_DATA              = 0x05
+CMD_DATA_PARITY       = 0x06
+CMD_DATA_SYN          = 0x07
+CMD_DATA_ACK          = 0x08
+CMD_DATA_FIN          = 0x09
+CMD_DATA_RESEND       = 0x0A
+CMD_PING              = 0x0B
+CMD_PONG              = 0x0C
+CMD_NET_FAST          = 0x0D
+CMD_NET_MID           = 0x0E
+CMD_NET_SLOW          = 0x0F
+CMD_VER_DOWN          = 0x10
+CMD_KEY_ROT           = 0x11
+CMD_CLOSE             = 0x12
+
+ENCRYPT_NONE          = 0x00
+ENCRYPT_AES_GCM       = 0x01
+ENCRYPT_CHACHA        = 0x02
+
+COMPRESS_NONE   = 0x00
+COMPRESS_ZLIB   = 0x01
+COMPRESS_SNAPPY = 0x02
+COMPRESS_LZ4    = 0x03
