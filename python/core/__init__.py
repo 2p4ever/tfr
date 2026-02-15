@@ -1,4 +1,4 @@
-#core/__init__.py
+# core/__init__.py
 from .consts import *
 from .frame import build_frame, parse_frame
 from .crypto import (
@@ -10,11 +10,8 @@ from .crypto import (
     aes_gcm_encrypt,
     aes_gcm_decrypt
 )
-from compress import (
+from .compress import (
     compress,
     decompress
 )
-from fec import (
-    fec_encode,
-    fec_decode
-)
+from .fec import *

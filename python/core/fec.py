@@ -1,48 +1,73 @@
-#core/fec.py
-import struct
-from typing import List, Optional
-from .consts import *
+from reedsolo import RSCodec
 
-def fec_encode(blocks: List[bytes]) -> List[bytes]:
-    data_blocks = blocks[:FEC_DATA_NUM]
-    while len(data_blocks) < FEC_DATA_NUM:
-        data_blocks.append(b'')
+class ReedSolomon:
+    def __init__(self, n, k):
+        self.n = n
+        self.k = k
+        self.n_parity = n - k
+        self.rsc = RSCodec(self.n_parity)
 
-    max_len = max(len(b) for b in data_blocks)
+    def encode(self, blocks):
+        if len(blocks) != self.k:
+            raise ValueError(f"must input {self.k} data blocks")
 
-    padded_blocks = [b + b'\x00' * (max_len - len(b)) for b in data_blocks]
+        max_len = max(len(b) for b in blocks)
+        padded = [b.ljust(max_len, b'\x00') for b in blocks]
 
-    parity = bytearray(max_len)
-    for i in range(max_len):
-        val = 0
-        for b in padded_blocks:
-            val ^= b[i]
-        parity[i] = val
+        cols = []
+        for i in range(max_len):
+            col = bytes(p[i] for p in padded)
+            enc_col = self.rsc.encode(col)
+            cols.append(enc_col)
 
-    return [*data_blocks, bytes(parity)]
+        out = [bytearray() for _ in range(self.n)]
+        for col in cols:
+            for i in range(self.n):
+                out[i].append(col[i])
 
-def fec_decode(blocks: List[Optional[bytes]]) -> Optional[bytes]:
-    missing = [i for i, b in enumerate(blocks) if b is None]
-    if len(missing) != 1:
-        return None
+        return [bytes(b) for b in out]
 
-    lost_idx = missing[0]
-    if lost_idx >= FEC_DATA_NUM:
-        return None
+    def decode(self, received_blocks):
+        erase_pos = [i for i, b in enumerate(received_blocks) if b is None]
+        
+        valid = [b for b in received_blocks if b is not None]
+        if not valid:
+            return None
 
-    max_len = 0
-    for b in blocks:
-        if b is not None:
-            max_len = max(max_len, len(b))
+        max_len = max(len(b) for b in valid)
+        n = self.n
+        k = self.k
 
-    recovered = bytearray()
-    for i in range(max_len):
-        val = 0
-        for j, b in enumerate(blocks):
-            if j == lost_idx:
-                continue
-            if b is not None and i < len(b):
-                val ^= b[i]
-        recovered.append(val)
+        data = []
+        for b in received_blocks:
+            if b is None:
+                data.append(None)
+            else:
+                data.append(b.ljust(max_len, b'\x00'))
 
-    return bytes(recovered).rstrip(b'\x00')
+        restored_cols = []
+        for i in range(max_len):
+            col_bytes = bytes(
+                data[j][i] if data[j] is not None else 0
+                for j in range(n)
+            )
+            try:
+                dec = self.rsc.decode(col_bytes, erase_pos=erase_pos)
+                if isinstance(dec, (bytes, bytearray)):
+                    fixed_col = dec
+                else:
+                    fixed_col = dec[0]
+            except Exception:
+                return None
+            restored_cols.append(fixed_col)
+
+        result = [bytearray() for _ in range(k)]
+        for col in restored_cols:
+            for i in range(k):
+                result[i].append(col[i])
+
+        return [bytes(r).rstrip(b'\x00') for r in result]
+
+RS_3_1  = ReedSolomon(n=4,  k=3)
+RS_10_4 = ReedSolomon(n=14, k=10)
+RS_16_8 = ReedSolomon(n=24, k=16)
